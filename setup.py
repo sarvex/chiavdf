@@ -102,9 +102,7 @@ class CMakeBuild(build_ext):
             )
 
         if platform.system() == "Windows":
-            cmake_version = LooseVersion(
-                re.search(r"version\s*([\d.]+)", out.decode()).group(1)
-            )
+            cmake_version = LooseVersion(re.search(r"version\s*([\d.]+)", out.decode())[1])
             if cmake_version < "3.1.0":
                 raise RuntimeError("CMake >= 3.1.0 is required on Windows")
 
@@ -114,28 +112,26 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
         cmake_args = [
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + str(extdir),
-            "-DPYTHON_EXECUTABLE=" + sys.executable,
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={str(extdir)}",
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
         ]
 
         cfg = "Debug" if self.debug else "Release"
         build_args = ["--config", cfg]
 
         if platform.system() == "Windows":
-            cmake_args += [
-                "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}".format(cfg.upper(), extdir)
-            ]
+            cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
             if sys.maxsize > 2 ** 32:
                 cmake_args += ["-A", "x64"]
             build_args += ["--", "/m"]
         else:
-            cmake_args += ["-DCMAKE_BUILD_TYPE=" + cfg]
+            cmake_args += [f"-DCMAKE_BUILD_TYPE={cfg}"]
             build_args += ["--", "-j", "6"]
 
         env = os.environ.copy()
-        env["CXXFLAGS"] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get("CXXFLAGS", ""), self.distribution.get_version()
-        )
+        env[
+            "CXXFLAGS"
+        ] = f'{env.get("CXXFLAGS", "")} -DVERSION_INFO=\\"{self.distribution.get_version()}\\"'
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, env=env)
         subprocess.check_call(["cmake", "--build", "."] + build_args)
 
@@ -231,7 +227,7 @@ class BuildExt(build_ext):
         opts = self.c_opts.get(ct, [])
         link_opts = self.l_opts.get(ct, [])
         if ct == "unix":
-            opts.append('-DVERSION_INFO="%s"' % self.distribution.get_version())
+            opts.append(f'-DVERSION_INFO="{self.distribution.get_version()}"')
             opts.append(cpp_flag(self.compiler))
             if has_flag(self.compiler, "-fvisibility=hidden"):
                 opts.append("-fvisibility=hidden")

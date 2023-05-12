@@ -5,11 +5,11 @@ from chiavdf import verify_n_wesolowski, verify_wesolowski
 
 class ClassGroup(tuple):
     @classmethod
-    def identity_for_discriminant(class_, d):
-        return class_.from_ab_discriminant(1, 1, d)
+    def identity_for_discriminant(cls, d):
+        return cls.from_ab_discriminant(1, 1, d)
 
     @classmethod
-    def from_ab_discriminant(class_, a, b, discriminant):
+    def from_ab_discriminant(cls, a, b, discriminant):
         if discriminant >= 0:
             raise ValueError("Positive discriminant.")
         if discriminant % 4 != 1:
@@ -17,17 +17,17 @@ class ClassGroup(tuple):
         if a == 0:
             raise ValueError("a can't be 0.")
         c = (b * b - discriminant) // (4 * a)
-        p = class_((a, b, c)).reduced()
+        p = cls((a, b, c)).reduced()
         if p.discriminant() != discriminant:
             raise ValueError("No classgroup element given the discriminant.")
         return p
 
     @classmethod
-    def from_bytes(class_, bytearray, discriminant):
+    def from_bytes(cls, bytearray, discriminant):
         int_size = (discriminant.bit_length() + 16) >> 4
-        a = int.from_bytes(bytearray[0:int_size], "big", signed=True)
+        a = int.from_bytes(bytearray[:int_size], "big", signed=True)
         b = int.from_bytes(bytearray[int_size:], "big", signed=True)
-        return class_.from_ab_discriminant(a, b, discriminant)
+        return cls.from_ab_discriminant(a, b, discriminant)
 
     def __new__(cls, t):
         a, b, c = t
@@ -180,10 +180,10 @@ def oldie(disc, a, b, proof, iter, sb, witness, doold):
     )
 
 
+iters = 1000
 for z in range(2):
-    iters = 1000
     t1 = time.time()
-    for i in range(iters):
+    for _ in range(iters):
         is_valid = oldie(
             str(
                 -131653324254138636653163861414331698305531090221496467927360326686715180966094250598321899621249972220387687148397451395672779897144571112116763666653213748473909547482437246405018707472153290116227072825447643324530509016778432769802300913461285128339119844239772697652504835780459732685000796733645621728639
